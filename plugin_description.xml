@@ -1,0 +1,12 @@
+<library path="lib/librviz_plugin_interactive_image">
+  <class name="rviz_plugin_interactive_image/InteractiveImage"
+         type="rviz_plugin_interactive_image::InteractiveImageDisplay"
+         base_class_type="rviz::Display">
+    <description>
+        Display sensor_msgs/Image topic - Lets you interact with it.
+    </description>
+    <message_type>sensor_msgs/Image</message_type>
+    <message_type>sensor_msgs/CompressedImage</message_type>
+    <message_type>theora_image_transport/Packet</message_type>
+  </class>
+</library>
