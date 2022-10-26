@@ -83,6 +83,19 @@ InteractiveImageDisplay::InteractiveImageDisplay() : rviz::ImageDisplayBase(), t
       new rviz::RosTopicProperty("Point Topic", "",
                            QString::fromStdString(ros::message_traits::datatype<geometry_msgs::Point>()),
                            "geometry_msgs::Pouint topic to publish.", this, SLOT(updateSendTopic()));
+
+  react_click_property_ = new rviz::BoolProperty(
+      "React to Mouse Clicks", true,
+      "If set to true, will emit mouse click position on single click.", this);
+  react_release_property_ = new rviz::BoolProperty(
+      "React to Mouse Release", false,
+      "If set to true, will emit mouse click position when the mouse button is released.", this);
+  react_dblclk_property_ = new rviz::BoolProperty(
+      "React to Mouse DoubleClick", false,
+      "If set to true, will emit mouse click position on doubleclick event.", this);
+  react_move_property_ = new rviz::BoolProperty(
+      "React to Mouse Move", false,
+      "If set to true, will emit mouse positions when the mouse is moved over the widget.", this);
 }
 
 void InteractiveImageDisplay::onInitialize()
@@ -142,7 +155,7 @@ void InteractiveImageDisplay::onInitialize()
   render_panel_->getCamera()->setNearClipDistance(0.01f);
 
   updateNormalizeOptions();
-  connect (render_panel_, SIGNAL( clickPosition( int, int, Qt::MouseButtons )), this, SLOT( gotClicked( int, int, Qt::MouseButtons)));
+  connect (render_panel_, SIGNAL( mousePosition( int, int, Qt::MouseButtons, int )), this, SLOT( gotInteraction( int, int, Qt::MouseButtons, int)));
 
 }
 
@@ -255,11 +268,16 @@ void InteractiveImageDisplay::processMessage(const sensor_msgs::Image::ConstPtr&
   texture_.addMessage(msg);
 }
 
-void InteractiveImageDisplay::gotClicked( int x, int y, Qt::MouseButtons buttons)
+void InteractiveImageDisplay::gotInteraction( int x, int y, Qt::MouseButtons buttons, int type)
 {
-    if (ros::ok() && output_publisher_ && (buttons & Qt::LeftButton)) {
-        // left click - so far we only respond to left click
-        
+    if (ros::ok() && output_publisher_ ) {
+        if (type==1 && ! react_click_property_->getBool()) return;
+        if (type==2 && ! react_release_property_->getBool()) return;
+        if (type==3 && ! react_dblclk_property_->getBool()) return;
+        if (type==0 && ! react_move_property_->getBool()) return;
+
+        uint64_t encoded_buttons=(((uint64_t)(buttons))<<2) + (type & 3);
+
         // make sure the aspect ratio of the image is preserved
         float win_width = render_panel_->width();
         float win_height = render_panel_->height();
@@ -284,7 +302,7 @@ void InteractiveImageDisplay::gotClicked( int x, int y, Qt::MouseButtons buttons
             geometry_msgs::Point msg;
             msg.x=newx;
             msg.y=newy;
-            msg.z=0.0f;
+            msg.z=(double)(encoded_buttons);
             output_publisher_.publish(msg);
         }
     }
@@ -296,7 +314,7 @@ void InteractiveImageDisplay::updateSendTopic()
     // Only take action if the name has changed.
     if( new_topic != output_topic_ ) { output_topic_ = new_topic;
         // If the topic is the empty string, don't publish anything.
-        if( output_topic_ == "" ) { 
+        if( output_topic_ == "" ) {
             output_publisher_.shutdown();
         } else {
             // The old ``velocity_publisher_`` is destroyed by this assignment,
@@ -310,10 +328,23 @@ void InteractiveImageDisplay::updateSendTopic()
 
 void RenderPanel::mousePressEvent( QMouseEvent* event )
 {
-  
-  Q_EMIT clickPosition( event->x(), event->y(), event->buttons() );
+  Q_EMIT mousePosition( event->x(), event->y(), event->buttons(), 1 );
   //onRenderWindowMouseEvents(event); // avoid buggy behaviour in original image display panel
-  
+}
+void RenderPanel::mouseReleaseEvent( QMouseEvent* event )
+{
+  Q_EMIT mousePosition( event->x(), event->y(), event->buttons(), 2 );
+  //onRenderWindowMouseEvents(event); // avoid buggy behaviour in original image display panel
+}
+void RenderPanel::mouseDoubleClickEvent( QMouseEvent* event )
+{
+  Q_EMIT mousePosition( event->x(), event->y(), event->buttons(), 3 );
+  //onRenderWindowMouseEvents(event); // avoid buggy behaviour in original image display panel
+}
+void RenderPanel::mouseMoveEvent( QMouseEvent* event )
+{
+  Q_EMIT mousePosition( event->x(), event->y(), event->buttons(), 0 );
+  //onRenderWindowMouseEvents(event); // avoid buggy behaviour in original image display panel
 }
 
 } // namespace rviz_plugin_interactive_image

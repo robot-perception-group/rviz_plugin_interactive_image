@@ -66,8 +66,11 @@ class RenderPanel : public  rviz::RenderPanel
 Q_OBJECT
 public:
   virtual void mousePressEvent(QMouseEvent* event);
+  virtual void mouseReleaseEvent(QMouseEvent* event);
+  virtual void mouseDoubleClickEvent(QMouseEvent* event);
+  virtual void mouseMoveEvent(QMouseEvent* event);
   Q_SIGNALS:
-  void clickPosition( int x, int y, Qt::MouseButtons buttons );
+  void mousePosition( int x, int y, Qt::MouseButtons buttons, int type );
 
 };
 
@@ -89,7 +92,7 @@ public:
 
 public Q_SLOTS:
   virtual void updateNormalizeOptions();
-  void gotClicked( int x, int y, Qt::MouseButtons buttons);
+  void gotInteraction( int x, int y, Qt::MouseButtons buttons, int type);
   virtual void updateSendTopic();
 
 protected:
@@ -117,6 +120,10 @@ protected:
   rviz::IntProperty* median_buffer_size_property_;
 
   rviz::RosTopicProperty* publish_topic_property_;
+  rviz::BoolProperty* react_click_property_;
+  rviz::BoolProperty* react_release_property_;
+  rviz::BoolProperty* react_dblclk_property_;
+  rviz::BoolProperty* react_move_property_;
   bool got_float_image_;
 
   QString output_topic_;
