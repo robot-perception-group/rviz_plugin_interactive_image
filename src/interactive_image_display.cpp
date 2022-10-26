@@ -26,6 +26,10 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+/*
+* Modifications © University Stuttgart 2022 - Institute for Flight Dynamics and Control (IFR)
+* Maintainer: Eric Price
+*/
 
 #include <boost/bind/bind.hpp>
 
@@ -138,7 +142,7 @@ void InteractiveImageDisplay::onInitialize()
   render_panel_->getCamera()->setNearClipDistance(0.01f);
 
   updateNormalizeOptions();
-  connect (render_panel_, SIGNAL( clickPosition( int, int, int, int )), this, SLOT( gotClicked( int, int, int, int)));
+  connect (render_panel_, SIGNAL( clickPosition( int, int, Qt::MouseButtons )), this, SLOT( gotClicked( int, int, Qt::MouseButtons)));
 
 }
 
@@ -251,24 +255,66 @@ void InteractiveImageDisplay::processMessage(const sensor_msgs::Image::ConstPtr&
   texture_.addMessage(msg);
 }
 
-void InteractiveImageDisplay::gotClicked( int x, int y, int w, int h)
+void InteractiveImageDisplay::gotClicked( int x, int y, Qt::MouseButtons buttons)
 {
-    // we got a click, publish message
+    if (ros::ok() && output_publisher_ && (buttons & Qt::LeftButton)) {
+        // left click - so far we only respond to left click
+        
+        // make sure the aspect ratio of the image is preserved
+        float win_width = render_panel_->width();
+        float win_height = render_panel_->height();
+
+        float img_width = texture_.getWidth();
+        float img_height = texture_.getHeight();
+
+        if (img_width != 0 && img_height != 0 && win_width != 0 && win_height != 0) {
+            float img_aspect = img_width / img_height;
+            float win_aspect = win_width / win_height;
+            float newx = ((float)x)/win_width;
+            float newy = ((float)y)/win_height;
+
+            if (img_aspect>win_aspect) {
+                newy *= img_aspect/win_aspect;
+                newy += 0.5*(1.0-img_aspect/win_aspect);
+            } else {
+                newx *= win_aspect/img_aspect;
+                newx += 0.5*(1.0-win_aspect/img_aspect);
+            }
+            // we got a click, publish message
+            geometry_msgs::Point msg;
+            msg.x=newx;
+            msg.y=newy;
+            msg.z=0.0f;
+            output_publisher_.publish(msg);
+        }
+    }
 }
 
 void InteractiveImageDisplay::updateSendTopic()
 {
-    // TODO send topic changed - update publisher
+    QString new_topic(publish_topic_property_->getString());
+    // Only take action if the name has changed.
+    if( new_topic != output_topic_ ) { output_topic_ = new_topic;
+        // If the topic is the empty string, don't publish anything.
+        if( output_topic_ == "" ) { 
+            output_publisher_.shutdown();
+        } else {
+            // The old ``velocity_publisher_`` is destroyed by this assignment,
+            // and thus the old topic advertisement is removed.  The call to
+            // nh_advertise() says we want to publish data on the new topic name.
+            output_publisher_ = nh_.advertise<geometry_msgs::Point>(
+                  output_topic_.toStdString(), 1 );
+        }
+    }
 }
 
 void RenderPanel::mousePressEvent( QMouseEvent* event )
 {
   
-  Q_EMIT clickPosition( event->x(), event->y(), width(), height() );
+  Q_EMIT clickPosition( event->x(), event->y(), event->buttons() );
+  //onRenderWindowMouseEvents(event); // avoid buggy behaviour in original image display panel
   
 }
-
-
 
 } // namespace rviz_plugin_interactive_image
 

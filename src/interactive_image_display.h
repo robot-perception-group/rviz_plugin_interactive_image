@@ -26,6 +26,10 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+/*
+* Modifications © University Stuttgart 2022 - Institute for Flight Dynamics and Control (IFR)
+* Maintainer: Eric Price
+*/
 
 #ifndef INTERACTIVE_IMAGE_DISPLAY_H
 #define INTERACTIVE_IMAGE_DISPLAY_H
@@ -63,7 +67,7 @@ Q_OBJECT
 public:
   virtual void mousePressEvent(QMouseEvent* event);
   Q_SIGNALS:
-  void clickPosition( int x, int y, int w, int h );
+  void clickPosition( int x, int y, Qt::MouseButtons buttons );
 
 };
 
@@ -85,7 +89,7 @@ public:
 
 public Q_SLOTS:
   virtual void updateNormalizeOptions();
-  void gotClicked( int x, int y, int w, int h);
+  void gotClicked( int x, int y, Qt::MouseButtons buttons);
   virtual void updateSendTopic();
 
 protected:
@@ -114,6 +118,13 @@ protected:
 
   rviz::RosTopicProperty* publish_topic_property_;
   bool got_float_image_;
+
+  QString output_topic_;
+  ros::Publisher output_publisher_;
+
+  // The ROS node handle.
+  ros::NodeHandle nh_;
+
 };
 
 } // namespace rviz_plugin_interactive_image
