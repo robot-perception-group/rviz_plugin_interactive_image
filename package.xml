@@ -7,7 +7,7 @@
   <maintainer email="eric.price@ifr.uni-stuttgart.de">Eric Price</maintainer>
   <license>BSD</license>
 
-  <url>http://github.com/robot-perception-group/</url>
+  <url>http://github.com/robot-perception-group/rviz_plugin_interactive_image</url>
   <author email="eric.price@ifr.uni-stuttgart.de">Eric Price</author>
 
   <buildtool_depend>catkin</buildtool_depend>
