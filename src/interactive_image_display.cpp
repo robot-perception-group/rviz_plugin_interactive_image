@@ -42,6 +42,8 @@
 #include <OgreTechnique.h>
 #include <OgreCamera.h>
 
+#include <QMouseEvent>
+
 #include <rviz/display_context.h>
 #include <rviz/frame_manager.h>
 #include <rviz/ogre_helpers/compatibility.h>
@@ -72,6 +74,11 @@ InteractiveImageDisplay::InteractiveImageDisplay() : rviz::ImageDisplayBase(), t
                       this, SLOT(updateNormalizeOptions()));
 
   got_float_image_ = false;
+
+  publish_topic_property_ =
+      new rviz::RosTopicProperty("Point Topic", "",
+                           QString::fromStdString(ros::message_traits::datatype<geometry_msgs::Point>()),
+                           "geometry_msgs::Pouint topic to publish.", this, SLOT(updateSendTopic()));
 }
 
 void InteractiveImageDisplay::onInitialize()
@@ -117,7 +124,7 @@ void InteractiveImageDisplay::onInitialize()
     img_scene_node_->attachObject(screen_rect_);
   }
 
-  render_panel_ = new rviz::RenderPanel();
+  render_panel_ = new RenderPanel();
   render_panel_->getRenderWindow()->setAutoUpdated(false);
   render_panel_->getRenderWindow()->setActive(false);
 
@@ -131,6 +138,8 @@ void InteractiveImageDisplay::onInitialize()
   render_panel_->getCamera()->setNearClipDistance(0.01f);
 
   updateNormalizeOptions();
+  connect (render_panel_, SIGNAL( clickPosition( int, int, int, int )), this, SLOT( gotClicked( int, int, int, int)));
+
 }
 
 InteractiveImageDisplay::~InteractiveImageDisplay()
@@ -242,7 +251,26 @@ void InteractiveImageDisplay::processMessage(const sensor_msgs::Image::ConstPtr&
   texture_.addMessage(msg);
 }
 
-} // namespace rviz
+void InteractiveImageDisplay::gotClicked( int x, int y, int w, int h)
+{
+    // we got a click, publish message
+}
+
+void InteractiveImageDisplay::updateSendTopic()
+{
+    // TODO send topic changed - update publisher
+}
+
+void RenderPanel::mousePressEvent( QMouseEvent* event )
+{
+  
+  Q_EMIT clickPosition( event->x(), event->y(), width(), height() );
+  
+}
+
+
+
+} // namespace rviz_plugin_interactive_image
 
 #include <pluginlib/class_list_macros.hpp>
 PLUGINLIB_EXPORT_CLASS(rviz_plugin_interactive_image::InteractiveImageDisplay, rviz::Display)

@@ -31,6 +31,7 @@
 #define INTERACTIVE_IMAGE_DISPLAY_H
 
 #ifndef Q_MOC_RUN // See: https://bugreports.qt-project.org/browse/QTBUG-22829
+#include <ros/ros.h>
 #include <QObject>
 
 #include <OgreMaterial.h>
@@ -55,6 +56,17 @@ class Rectangle2D;
 
 namespace rviz_plugin_interactive_image
 {
+
+class RenderPanel : public  rviz::RenderPanel
+{
+Q_OBJECT
+public:
+  virtual void mousePressEvent(QMouseEvent* event);
+  Q_SIGNALS:
+  void clickPosition( int x, int y, int w, int h );
+
+};
+
 /**
  * \class InteractiveImageDisplay
  *
@@ -73,6 +85,8 @@ public:
 
 public Q_SLOTS:
   virtual void updateNormalizeOptions();
+  void gotClicked( int x, int y, int w, int h);
+  virtual void updateSendTopic();
 
 protected:
   // overrides from Display
@@ -86,9 +100,9 @@ protected:
 
   rviz::ROSImageTexture texture_;
 
-  rviz::RenderPanel* render_panel_;
+  //rviz::RenderPanel* render_panel_;
+  RenderPanel* render_panel_;
 
-private:
   Ogre::SceneNode* img_scene_node_;
   Ogre::Rectangle2D* screen_rect_;
   Ogre::MaterialPtr material_;
@@ -97,6 +111,8 @@ private:
   rviz::FloatProperty* min_property_;
   rviz::FloatProperty* max_property_;
   rviz::IntProperty* median_buffer_size_property_;
+
+  rviz::RosTopicProperty* publish_topic_property_;
   bool got_float_image_;
 };
 
