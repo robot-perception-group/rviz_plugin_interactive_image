@@ -1,13 +1,15 @@
 rviz plugin for interactive images
 ===========================================================
 
-This repository provides an rviz plugin to display a 2D image or video in RVIZ and interact with it.
+This repository provides an rviz plugin to display a 2D image or video in RViz and interact with it.
 
-Visually, the plugin is virtually identical to the rviz default ImageDispay plugin and supports `sensor_msgs/Image` `sensor_msgs/CompressedImage` and `theora_image_tranbsport/Packet` ROS messages, which are displayed in a 2D display widget.
+Visually, the plugin is identical to the default ImageDispay plugin in rviz and supports `sensor_msgs/Image` `sensor_msgs/CompressedImage` and `theora_image_tranbsport/Packet` ROS messages, which are displayed in a 2D display widget.
 
-In addition to the `Image Topic`, an additional `Point Topic` can be configured for each instance. If set, a mouse interaction with the widget will publish a `geometry_msgs/Point` message with the normalized image coordinate in its x and y coordinates. The z coordinate encodes the type of interaction (see below)
+In addition to the `Image Topic`, an additional `Point Topic` can be configured for each plugin instance. If set, a mouse interaction with the widget will publish a `geometry_msgs/Point` message with the normalized image coordinate in its x and y coordinates. The top left corner of the image has coordinates `x=0.0, y=0.0` the rightmost column of the image has coordinate `x=1.0` and the bottom most row has coordinate `y=1.0`. Interactions outside the image but within the widget, for example on the black borders, will result in corresponding coordinates <0.0 or >1.0.
 
-Each instance has 4 boolean configuration options.
+The z coordinate encodes the type of interaction (see below)
+
+Each instance of the plugin has 4 boolean configuration options.
 
 1. 'React to Mouse Clicks' - this publishes a point coordinate message on every single click when the mouse button is first pressed. Responds to a double click as a single click only. - code `1`
 
@@ -17,19 +19,19 @@ Each instance has 4 boolean configuration options.
 
 4. 'React to Mouse Move' - this publishes a point coordinate message whenever the mouse is moved over the widget. - code `0`
 
-If one or multiple buttons are pressed, the respective button code (see https://doc.qt.io/qt-5/qt.html#MouseButton-enum) is left shifted by two bits and added to the type, then stored in the z coordinate.
+If one or multiple buttons are pressed, the respective button code (see https://doc.qt.io/qt-5/qt.html#MouseButton-enum) is left shifted by two bits (multiplied by 4) and then added to the type, then stored in the z coordinate.
 
 Examples:
 
-- When reacting to mouse clicks, a single left click (QtMouseButton 1) is left shifted 2 bits (=4) and added to type 1, so z coordinate is `5.0`
+- When reacting to mouse clicks, a single left click (QtMouseButton 1) is left shifted 2 bits (=4) and added to type 1, so the z coordinate is `5.0`
 - When reacting to all events, a drag event with the right mouse button (QtMouseButton 2) is left shifted 2 bits (=8) leading to the following sequence:
 ```
-    z=0 (movement with no presses)
+    z=0.0 (movement with no presses)
     ...
-    z=9 (click)
-    z=8 ( movement with button 2 pressed)
+    z=9.0 (right mouse button click event)
+    z=8.0 (movement with mouse button 2 pressed)
     ...
-    z=2 ( release, no button pressed)
+    z=2.0 (button release even, no more buttons pressed)
 ```
 
 
